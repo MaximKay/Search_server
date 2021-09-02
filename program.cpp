@@ -1,5 +1,3 @@
-// search_server_s1_t2_v2.cpp
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -8,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <execution>
 
 using namespace std;
 
@@ -72,48 +71,35 @@ public:
 		documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
 	}
 
-	template <typename FuncPredict>
-	vector<Document> FindTopDocuments(const string& raw_query, FuncPredict func_pred) const {
+	template <typename Filter>
+	vector<Document> FindTopDocuments(const string& raw_query, Filter filter) const {
 		const Query query = ParseQuery(raw_query);
 		auto raw_documents = FindAllDocuments(query);
 		vector<Document> matched_documents;
-		if constexpr (is_same_v<FuncPredict, DocumentStatus>){
-			return FindTopDocuments(raw_query, [func_pred](int document_id, DocumentStatus status, int rating)
-					{return status == func_pred;});
-			/*switch (func_pred){
-			case DocumentStatus::ACTUAL:
-				return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating)
-						{return status == DocumentStatus::ACTUAL;});
-			case DocumentStatus::IRRELEVANT:
-				return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating)
-						{return status == DocumentStatus::IRRELEVANT;});
-			case DocumentStatus::BANNED:
-				return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating)
-						{return status == DocumentStatus::BANNED;});
-			case DocumentStatus::REMOVED:
-				return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating)
-						{return status == DocumentStatus::REMOVED;});
-			};*/
-		} else {
-			for (const auto& doc:raw_documents){
-				if (func_pred(doc.id, documents_.at(doc.id).status, doc.rating)){
-					matched_documents.push_back(doc);
-				};
+
+		for (const auto& doc:raw_documents){
+			if (filter(doc.id, documents_.at(doc.id).status, doc.rating)){
+				matched_documents.push_back(doc);
 			};
 		};
 
-		sort(matched_documents.begin(), matched_documents.end(),
-				[](const Document& lhs, const Document& rhs) {
+		const auto double_equal = [](const Document& lhs, const Document& rhs){
 			if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
 				return lhs.rating > rhs.rating;
-			} else {
-				return lhs.relevance > rhs.relevance;
-			}
-		});
+			} else {return lhs.relevance > rhs.relevance;};
+		};
+
+		sort(execution::par, matched_documents.begin(), matched_documents.end(), double_equal);
+
 		if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
 			matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
 		}
 		return matched_documents;
+	}
+
+	vector<Document> FindTopDocuments(const string& raw_query, const DocumentStatus& status) const {
+		return FindTopDocuments(raw_query, [status](int document_id, DocumentStatus document_status, int rating)
+				{return document_status == status;});
 	}
 
 	vector<Document> FindTopDocuments(const string& raw_query) const {
@@ -172,10 +158,7 @@ private:
 	}
 
 	static int ComputeAverageRating(const vector<int>& ratings) {
-		int rating_sum = 0;
-		for (const int rating : ratings) {
-			rating_sum += rating;
-		}
+		int rating_sum = reduce (execution::par, begin(ratings), end(ratings), 0);
 		return rating_sum / static_cast<int>(ratings.size());
 	}
 
