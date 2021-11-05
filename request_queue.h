@@ -8,8 +8,8 @@
 
 class RequestQueue {
 public:
-	explicit RequestQueue(SearchServer& search_server);
-        
+	explicit RequestQueue(SearchServer&);
+
 	template <typename DocumentPredicate>
 	std::vector<Document> AddFindRequest(const std::string& raw_query, DocumentPredicate document_predicate) {
 		const auto search_result = search_server_.FindTopDocuments(raw_query, document_predicate);
@@ -17,12 +17,12 @@ public:
 		return search_result;
 	}
 
-	std::vector<Document> AddFindRequest(const std::string& raw_query, DocumentStatus status);
+	std::vector<Document> AddFindRequest(const std::string&, DocumentStatus);
 
-	std::vector<Document> AddFindRequest(const std::string& raw_query);
+	std::vector<Document> AddFindRequest(const std::string&);
 
 	int GetNoResultRequests() const;
-    
+
 private:
 	struct QueryResult {
 		std::string query_;
@@ -32,5 +32,5 @@ private:
 	const static int sec_in_day_ = 1440;
 	SearchServer& search_server_;
 
-	void NewQuery(const std::string& query, const std::vector<Document>& search_result);
+	void NewQuery(const std::string&, const std::vector<Document>&);
 };

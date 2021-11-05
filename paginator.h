@@ -14,7 +14,7 @@ public:
 
 	auto size() const {return distance(begin_, end_);}
 
-template <typename Ostream>
+	template <typename Ostream>
 	Ostream& operator<<(Ostream& output) {
 		for (auto it = begin(); it != end(); ++it) {
 			output << *it;

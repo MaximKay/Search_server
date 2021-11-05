@@ -7,15 +7,20 @@
 #include<stdexcept>
 #include<cmath>
 
-using namespace std::string_literals;
-
 #include "string_processing.h"
 #include "document.h"
+#include "log_duration.h"
+
+using namespace std::string_literals;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
 
 class SearchServer {
 public:
+	explicit SearchServer() = default;
+
+	explicit SearchServer(const std::string&);
+
 	template <typename StringContainer>
 	explicit SearchServer(const StringContainer& stop_words)
 	: stop_words_(MakeUniqueNonEmptyStrings(stop_words))  // Extract non-empty stop words
@@ -25,9 +30,7 @@ public:
 		}
 	}
 
-	explicit SearchServer(const std::string& stop_words_text);
-
-	void AddDocument(int document_id, const std::string& document, DocumentStatus status, const std::vector<int>& ratings);
+	void AddDocument(int, const std::string&, DocumentStatus, const std::vector<int>&);
 
 	template <typename DocumentPredicate>
 	std::vector<Document> FindTopDocuments(const std::string& raw_query, DocumentPredicate document_predicate) const {
@@ -36,7 +39,7 @@ public:
 		auto matched_documents = FindAllDocuments(query, document_predicate);
 
 		sort(matched_documents.begin(), matched_documents.end(), [](const Document& lhs, const Document& rhs) {
-			if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
+			if (std::abs(lhs.relevance - rhs.relevance) < 1e-6) {
 				return lhs.rating > rhs.rating;
 			} else {
 				return lhs.relevance > rhs.relevance;
@@ -49,16 +52,27 @@ public:
 		return matched_documents;
 	}
 
-	std::vector<Document> FindTopDocuments(const std::string& raw_query, DocumentStatus status) const;
+	std::vector<Document> FindTopDocuments(const std::string&, DocumentStatus) const;
 
-	std::vector<Document> FindTopDocuments(const std::string& raw_query) const;
+	std::vector<Document> FindTopDocuments(const std::string&) const;
 
 	int GetDocumentCount() const;
 
-	int GetDocumentId(int index) const;
+	int GetDocumentId(int id) const;
 
-	std::tuple<std::vector<std::string>, DocumentStatus> MatchDocument(const std::string& raw_query, int document_id) const;
+	auto begin()const{
+		return document_ids_.begin();
+	}
 
+	auto end()const{
+		return document_ids_.end();
+	}
+
+	const std::map<std::string, double>& GetWordFrequencies(int) const;
+
+	std::tuple<std::vector<std::string>, DocumentStatus> MatchDocument(const std::string&, int) const;
+
+	void RemoveDocument(int);
 private:
 	struct DocumentData {
 		int rating;
@@ -66,16 +80,17 @@ private:
 	};
 	const std::set<std::string> stop_words_;
 	std::map<std::string, std::map<int, double>> word_to_document_freqs_;
+	std::map<int, std::map<std::string, double>> document_words_freqs_;
 	std::map<int, DocumentData> documents_;
-	std::vector<int> document_ids_;
+	std::set<int> document_ids_;
 
-	bool IsStopWord(const std::string& word) const;
+	bool IsStopWord(const std::string&) const;
 
-	static bool IsValidWord(const std::string& word);
+	static bool IsValidWord(const std::string&);
 
-	std::vector<std::string> SplitIntoWordsNoStop(const std::string& text) const;
+	std::vector<std::string> SplitIntoWordsNoStop(const std::string&) const;
 
-	static int ComputeAverageRating(const std::vector<int>& ratings);
+	static int ComputeAverageRating(const std::vector<int>&);
 
 	struct QueryWord {
 		std::string data;
@@ -83,16 +98,16 @@ private:
 		bool is_stop;
 	};
 
-	QueryWord ParseQueryWord(const std::string& text) const;
+	QueryWord ParseQueryWord(const std::string&) const;
 
 	struct Query {
 		std::set<std::string> plus_words;
 		std::set<std::string> minus_words;
 	};
 
-	Query ParseQuery(const std::string& text) const;
+	Query ParseQuery(const std::string&) const;
 
-	double ComputeWordInverseDocumentFreq(const std::string& word) const;
+	double ComputeWordInverseDocumentFreq(const std::string&) const;
 
 	template <typename DocumentPredicate>
 	std::vector<Document> FindAllDocuments(const Query& query, DocumentPredicate document_predicate) const {
@@ -126,3 +141,11 @@ private:
 		return matched_documents;
 	}
 };
+
+void PrintMatchDocumentResult(int, const std::vector<std::string>&, DocumentStatus);
+
+void AddDocument(SearchServer&, int, const std::string&, DocumentStatus, const std::vector<int>&);
+
+void FindTopDocuments(const SearchServer&, const std::string&);
+
+void MatchDocuments(const SearchServer&, const std::string&);
