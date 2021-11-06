@@ -21,9 +21,7 @@ int RequestQueue::GetNoResultRequests() const {
 
 void RequestQueue::NewQuery(const std::string& query, const std::vector<Document>& search_result){
 	bool success;
-	if (!search_result.empty()){
-		success = true;
-	} else {success = false;};
+	!search_result.empty() ? success = true : success = false;
 	if (requests_.size() >= sec_in_day_){
 		requests_.pop_front();
 	};
