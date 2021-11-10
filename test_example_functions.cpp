@@ -107,7 +107,7 @@ void CustomFiltersTests() {
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		server.AddDocument(doc_id_2, content_2, DocumentStatus::BANNED, ratings_2);
 		const auto filter = [](int document_id, DocumentStatus document_status, int rating)
-																				{return document_status == DocumentStatus::BANNED;};
+																										{return document_status == DocumentStatus::BANNED;};
 		const auto found_docs = server.FindTopDocuments("in"s, filter);
 		ASSERT_EQUAL_HINT(found_docs.size(), 1u, "Status filter found wrong amount of documents"s);
 		ASSERT_EQUAL_HINT(found_docs[0].id, 12, "Status filter found wrong document"s);
@@ -117,7 +117,7 @@ void CustomFiltersTests() {
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		server.AddDocument(doc_id_2, content_2, DocumentStatus::ACTUAL, ratings_2);
 		const auto filter = [](int document_id, DocumentStatus document_status, int rating)
-																						{return rating > 3;};
+																												{return rating > 3;};
 		const auto found_docs = server.FindTopDocuments("in"s, filter);
 		ASSERT_EQUAL_HINT(found_docs.size(), 1u, "Rating filter found wrong amount of documents"s);
 		ASSERT_EQUAL_HINT(found_docs[0].id, 12, "Rating filter found wrong document"s);
@@ -127,7 +127,7 @@ void CustomFiltersTests() {
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		server.AddDocument(doc_id_2, content_2, DocumentStatus::ACTUAL, ratings_2);
 		const auto filter = [](int document_id, DocumentStatus document_status, int rating)
-																							{return document_id > 20;};
+																													{return document_id > 20;};
 		const auto found_docs = server.FindTopDocuments("in"s, filter);
 		ASSERT_EQUAL_HINT(found_docs.size(), 1u, "Id filter found wrong amount of documents"s);
 		ASSERT_EQUAL_HINT(found_docs[0].id, 42, "Id filter found wrong document"s);
@@ -152,6 +152,26 @@ void StatusFilterTest() {
 	}
 }
 
+void RemoveDocumentTest(){
+	const int doc_id = 42;
+	const std::string content = "cat in the city"s;
+	const std::vector<int> ratings = {1, 2, 3};
+	const int doc_id_2 = 12;
+	const std::string content_2 = "dog in the house"s;
+	const std::vector<int> ratings_2 = {5, 5, 4};
+	{
+		SearchServer server;
+		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
+		server.AddDocument(doc_id_2, content_2, DocumentStatus::ACTUAL, ratings_2);
+		server.RemoveDocument(doc_id);
+		std::map<std::string, double> empty_map;
+		ASSERT_EQUAL_HINT(server.GetDocumentId(doc_id), -999, "Wrong document was removed from ids set"s);
+		ASSERT_EQUAL_HINT(server.GetWordFrequencies(doc_id), empty_map, "Wrong document was removed from word freqs map"s);
+		const auto found_docs = server.FindTopDocuments("city"s);
+		ASSERT_EQUAL_HINT(found_docs.size(), 0u, "Document was not removed"s);
+	}
+}
+
 void TestSearchServer() {
 	RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
 	RUN_TEST(TestMinusWords);
@@ -159,4 +179,5 @@ void TestSearchServer() {
 	RUN_TEST(AverageRatingTest);
 	RUN_TEST(CustomFiltersTests);
 	RUN_TEST(StatusFilterTest);
+	RUN_TEST(RemoveDocumentTest);
 }
