@@ -43,5 +43,6 @@ void RelevanceCalculatingAndSortingTests();
 void AverageRatingTest();
 void CustomFiltersTests();
 void StatusFilterTest();
+void RemoveDocumentTest();
 
 void TestSearchServer();
