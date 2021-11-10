@@ -33,7 +33,7 @@ int SearchServer::GetDocumentCount() const {
 }
 
 int SearchServer::GetDocumentId(int id) const {
-	return *(document_ids_.find(id));
+	return document_ids_.find(id) != document_ids_.end() ? *(document_ids_.find(id)) : -999;
 }
 
 std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string& raw_query, int document_id) const {
@@ -129,7 +129,9 @@ double SearchServer::ComputeWordInverseDocumentFreq(const std::string& word) con
 }
 
 const std::map<std::string, double>& SearchServer::GetWordFrequencies(int document_id) const {
-	return document_words_freqs_.find(document_id)->second;
+	std::map<std::string, double> empty_map;
+	return document_words_freqs_.find(document_id) != document_words_freqs_.end() ?
+			document_words_freqs_.find(document_id)->second : empty_map;
 }
 
 void SearchServer::RemoveDocument(int document_id){
@@ -160,31 +162,31 @@ void AddDocument(SearchServer& search_server, int document_id, const std::string
 	try {
 		search_server.AddDocument(document_id, document, status, ratings);
 	} catch (const std::exception& e) {
-		std::cout << "Îøèáêà äîáàâëåíèÿ äîêóìåíòà "s << document_id << ": "s << e.what() << std::endl;
+		std::cout << "ÐžÑˆÐ¸Ð±ÐºÐ° Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð¸Ñ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð° "s << document_id << ": "s << e.what() << std::endl;
 	}
 }
 
 void FindTopDocuments(const SearchServer& search_server, const std::string& raw_query) {
 	LOG_DURATION_STREAM("Operation time"s, std::cout);
-	std::cout << "Ðåçóëüòàòû ïîèñêà ïî çàïðîñó: "s << raw_query << std::endl;
+	std::cout << "Ð ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚Ñ‹ Ð¿Ð¾Ð¸ÑÐºÐ° Ð¿Ð¾ Ð·Ð°Ð¿Ñ€Ð¾ÑÑƒ: "s << raw_query << std::endl;
 	try {
 		for (const Document& document : search_server.FindTopDocuments(raw_query)) {
 			std::cout << document << std::endl;
 		}
 	} catch (const std::exception& e) {
-		std::cout << "Îøèáêà ïîèñêà: "s << e.what() << std::endl;
+		std::cout << "ÐžÑˆÐ¸Ð±ÐºÐ° Ð¿Ð¾Ð¸ÑÐºÐ°: "s << e.what() << std::endl;
 	}
 }
 
 void MatchDocuments(const SearchServer& search_server, const std::string& query) {
 	LOG_DURATION_STREAM("Operation time"s, std::cout);
 	try {
-		std::cout << "Ìàò÷èíã äîêóìåíòîâ ïî çàïðîñó: "s << query << std::endl;
+		std::cout << "ÐœÐ°Ñ‚Ñ‡Ð¸Ð½Ð³ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð¾Ð² Ð¿Ð¾ Ð·Ð°Ð¿Ñ€Ð¾ÑÑƒ: "s << query << std::endl;
 		for (const int id : search_server){
 			const auto [words, status] = search_server.MatchDocument(query, id);
 			PrintMatchDocumentResult(id, words, status);
 		};
 	} catch (const std::exception& e) {
-		std::cout << "Îøèáêà ìàò÷èíãà äîêóìåíòîâ íà çàïðîñ "s << query << ": "s << e.what() << std::endl;
+		std::cout << "ÐžÑˆÐ¸Ð±ÐºÐ° Ð¼Ð°Ñ‚Ñ‡Ð¸Ð½Ð³Ð° Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð¾Ð² Ð½Ð° Ð·Ð°Ð¿Ñ€Ð¾Ñ "s << query << ": "s << e.what() << std::endl;
 	}
 }
