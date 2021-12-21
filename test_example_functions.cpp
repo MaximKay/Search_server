@@ -1,10 +1,10 @@
 #include "test_example_functions.h"
 
 void Assert(const bool& bool_value, const std::string& bool_str, const std::string& file_name, const int& line,
-		const std::string& func_name, const std::string& hint){
-	if (!bool_value){
+	const std::string& func_name, const std::string& hint) {
+	if (!bool_value) {
 		std::cerr << file_name << "("s << line << "): "s << func_name << ": "s
-				<< "ASSERT("s << bool_str << ") failed."s;
+			<< "ASSERT("s << bool_str << ") failed."s;
 		if (!hint.empty()) {
 			std::cerr << " Hint: "s << hint;
 		}
@@ -16,7 +16,7 @@ void Assert(const bool& bool_value, const std::string& bool_str, const std::stri
 void TestExcludeStopWordsFromAddedDocumentContent() {
 	const int doc_id = 42;
 	const std::string content = "cat in the city"s;
-	const std::vector<int> ratings = {1, 2, 3};
+	const std::vector<int> ratings = { 1, 2, 3 };
 	{
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
@@ -33,13 +33,13 @@ void TestExcludeStopWordsFromAddedDocumentContent() {
 	}
 }
 
-void TestMinusWords(){
+void TestMinusWords() {
 	const int doc_id = 42;
 	const std::string content = "cat in the city"s;
-	const std::vector<int> ratings = {1, 2, 3};
+	const std::vector<int> ratings = { 1, 2, 3 };
 	const int doc_id_2 = 12;
 	const std::string content_2 = "dog in the house"s;
-	const std::vector<int> ratings_2 = {5, 2, 4};
+	const std::vector<int> ratings_2 = { 5, 2, 4 };
 	{
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
@@ -57,13 +57,13 @@ void TestMinusWords(){
 	}
 }
 
-void RelevanceCalculatingAndSortingTests(){
+void RelevanceCalculatingAndSortingTests() {
 	const int doc_id = 42;
 	const std::string content = "cat in the city"s;
-	const std::vector<int> ratings = {1, 2, 3};
+	const std::vector<int> ratings = { 1, 2, 3 };
 	const int doc_id_2 = 12;
 	const std::string content_2 = "city house"s;
-	const std::vector<int> ratings_2 = {1, 2, 1};
+	const std::vector<int> ratings_2 = { 1, 2, 1 };
 	{
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
@@ -76,7 +76,7 @@ void RelevanceCalculatingAndSortingTests(){
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		server.AddDocument(doc_id_2, content_2, DocumentStatus::ACTUAL, ratings_2);
-		server.AddDocument(10, "some important text"s, DocumentStatus::ACTUAL, {5, 5, 5});
+		server.AddDocument(10, "some important text"s, DocumentStatus::ACTUAL, { 5, 5, 5 });
 		const auto found_docs = server.FindTopDocuments("in city"s);
 		ASSERT_HINT(found_docs[0].relevance > found_docs[1].relevance, "Incorrect relevance sorting"s);
 	}
@@ -85,12 +85,12 @@ void RelevanceCalculatingAndSortingTests(){
 void AverageRatingTest() {
 	const int doc_id = 42;
 	const std::string content = "cat in the city"s;
-	const std::vector<int> ratings = {1, 2, 3};
+	const std::vector<int> ratings = { 1, 2, 3 };
 	{
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		const auto found_docs = server.FindTopDocuments("cat"s);
-		const int correct_rating = (1 + 2 + 3)/3;
+		const int correct_rating = (1 + 2 + 3) / 3;
 		ASSERT_EQUAL_HINT(found_docs[0].rating, correct_rating, "Incorrect average rating calculations"s);
 	}
 }
@@ -98,16 +98,16 @@ void AverageRatingTest() {
 void CustomFiltersTests() {
 	const int doc_id = 42;
 	const std::string content = "cat in the city"s;
-	const std::vector<int> ratings = {1, 2, 3};
+	const std::vector<int> ratings = { 1, 2, 3 };
 	const int doc_id_2 = 12;
 	const std::string content_2 = "dog in the house"s;
-	const std::vector<int> ratings_2 = {5, 5, 4};
+	const std::vector<int> ratings_2 = { 5, 5, 4 };
 	{
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		server.AddDocument(doc_id_2, content_2, DocumentStatus::BANNED, ratings_2);
-		const auto filter = [](int document_id, DocumentStatus document_status, int rating)
-																										{return document_status == DocumentStatus::BANNED;};
+		const auto filter = [](int, DocumentStatus document_status, int)
+		{return document_status == DocumentStatus::BANNED; };
 		const auto found_docs = server.FindTopDocuments("in"s, filter);
 		ASSERT_EQUAL_HINT(found_docs.size(), 1u, "Status filter found wrong amount of documents"s);
 		ASSERT_EQUAL_HINT(found_docs[0].id, 12, "Status filter found wrong document"s);
@@ -116,8 +116,8 @@ void CustomFiltersTests() {
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		server.AddDocument(doc_id_2, content_2, DocumentStatus::ACTUAL, ratings_2);
-		const auto filter = [](int document_id, DocumentStatus document_status, int rating)
-																												{return rating > 3;};
+		const auto filter = [](int, DocumentStatus, int rating)
+		{return rating > 3; };
 		const auto found_docs = server.FindTopDocuments("in"s, filter);
 		ASSERT_EQUAL_HINT(found_docs.size(), 1u, "Rating filter found wrong amount of documents"s);
 		ASSERT_EQUAL_HINT(found_docs[0].id, 12, "Rating filter found wrong document"s);
@@ -126,8 +126,8 @@ void CustomFiltersTests() {
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		server.AddDocument(doc_id_2, content_2, DocumentStatus::ACTUAL, ratings_2);
-		const auto filter = [](int document_id, DocumentStatus document_status, int rating)
-																													{return document_id > 20;};
+		const auto filter = [](int document_id, DocumentStatus, int)
+		{return document_id > 20; };
 		const auto found_docs = server.FindTopDocuments("in"s, filter);
 		ASSERT_EQUAL_HINT(found_docs.size(), 1u, "Id filter found wrong amount of documents"s);
 		ASSERT_EQUAL_HINT(found_docs[0].id, 42, "Id filter found wrong document"s);
@@ -138,10 +138,10 @@ void CustomFiltersTests() {
 void StatusFilterTest() {
 	const int doc_id = 42;
 	const std::string content = "cat in the city"s;
-	const std::vector<int> ratings = {1, 2, 3};
+	const std::vector<int> ratings = { 1, 2, 3 };
 	const int doc_id_2 = 12;
 	const std::string content_2 = "dog in the house"s;
-	const std::vector<int> ratings_2 = {5, 5, 4};
+	const std::vector<int> ratings_2 = { 5, 5, 4 };
 	{
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
@@ -152,13 +152,13 @@ void StatusFilterTest() {
 	}
 }
 
-void RemoveDocumentTest(){
+void RemoveDocumentTest() {
 	const int doc_id = 42;
 	const std::string content = "cat in the city"s;
-	const std::vector<int> ratings = {1, 2, 3};
+	const std::vector<int> ratings = { 1, 2, 3 };
 	const int doc_id_2 = 12;
 	const std::string content_2 = "dog in the house"s;
-	const std::vector<int> ratings_2 = {5, 5, 4};
+	const std::vector<int> ratings_2 = { 5, 5, 4 };
 	{
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
@@ -166,7 +166,7 @@ void RemoveDocumentTest(){
 		server.RemoveDocument(doc_id);
 		std::map<std::string, double> empty_map;
 		ASSERT_EQUAL_HINT(server.GetDocumentId(doc_id), -999, "Wrong document was removed from ids set"s);
-		ASSERT_EQUAL_HINT(server.GetWordFrequencies(doc_id), empty_map, "Wrong document was removed from word freqs map"s);
+		ASSERT_EQUAL_HINT(server.GetWordFrequencies(doc_id).size(), empty_map.size(), "Wrong document was removed from word freqs map"s);
 		const auto found_docs = server.FindTopDocuments("city"s);
 		ASSERT_EQUAL_HINT(found_docs.size(), 0u, "Document was not removed"s);
 	}
