@@ -15,8 +15,8 @@ std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query)
 }
 
 int RequestQueue::GetNoResultRequests() const {
-	return count_if(begin(requests_), end(requests_),
-			[](const QueryResult& result){return result.successful_search_ == false;});
+	return static_cast<int>(count_if(begin(requests_), end(requests_),
+		[](const QueryResult& result) {return result.successful_search_ == false; }));
 }
 
 void RequestQueue::NewQuery(const std::string& query, const std::vector<Document>& search_result){

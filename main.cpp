@@ -6,16 +6,24 @@
 #include "request_queue.h"
 #include "test_example_functions.h"
 #include "remove_duplicates.h"
+#include "process_queries.h"
 
 using namespace std::string_literals;
 
+void PrintDocument(const Document& document) {
+	std::cout << "{ "s
+		<< "document_id = "s << document.id << ", "s
+		<< "relevance = "s << document.relevance << ", "s
+		<< "rating = "s << document.rating << " }"s << std::endl;
+}
+
 int main() {
-	/*{
+	/* {
 		TestSearchServer();
 		std::cout << "All tests OK"s << std::endl;
 	}*/
 
-	/*{
+	/* {
 		SearchServer search_server("and in at"s);
 		RequestQueue request_queue(search_server);
 
@@ -38,75 +46,238 @@ int main() {
 		std::cout << "Total empty requests: "s << request_queue.GetNoResultRequests() << std::endl;
 	}*/
 
-	/*{
-		SearchServer search_server("è â íà"s);
+	/* {
+	   SearchServer search_server("Ð¸ Ð² Ð½Ð°"s);
 
-		AddDocument(search_server, 1, "ïóøèñòûé êîò ïóøèñòûé õâîñò"s, DocumentStatus::ACTUAL, {7, 2, 7});
-		AddDocument(search_server, 1, "ïóøèñòûé ï¸ñ è ìîäíûé îøåéíèê"s, DocumentStatus::ACTUAL, {1, 2});
-		AddDocument(search_server, -1, "ïóøèñòûé ï¸ñ è ìîäíûé îøåéíèê"s, DocumentStatus::ACTUAL, {1, 2});
-		AddDocument(search_server, 3, "áîëüøîé ï¸ñ ñêâî\x12ðåö åâãåíèé"s, DocumentStatus::ACTUAL, {1, 3, 2});
-		AddDocument(search_server, 4, "áîëüøîé ï¸ñ ñêâîðåö åâãåíèé"s, DocumentStatus::ACTUAL, {1, 1, 1});
+	   AddDocument(search_server, 1, "Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ ÐºÐ¾Ñ‚ Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ Ñ…Ð²Ð¾ÑÑ‚"s, DocumentStatus::ACTUAL, {7, 2, 7});
+	   AddDocument(search_server, 1, "Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ Ð¿Ñ‘Ñ Ð¸ Ð¼Ð¾Ð´Ð½Ñ‹Ð¹ Ð¾ÑˆÐµÐ¹Ð½Ð¸Ðº"s, DocumentStatus::ACTUAL, {1, 2});
+	   AddDocument(search_server, -1, "Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ Ð¿Ñ‘Ñ Ð¸ Ð¼Ð¾Ð´Ð½Ñ‹Ð¹ Ð¾ÑˆÐµÐ¹Ð½Ð¸Ðº"s, DocumentStatus::ACTUAL, {1, 2});
+	   AddDocument(search_server, 3, "Ð±Ð¾Ð»ÑŒÑˆÐ¾Ð¹ Ð¿Ñ‘Ñ ÑÐºÐ²Ð¾\x12Ñ€ÐµÑ† ÐµÐ²Ð³ÐµÐ½Ð¸Ð¹"s, DocumentStatus::ACTUAL, {1, 3, 2});
+	   AddDocument(search_server, 4, "Ð±Ð¾Ð»ÑŒÑˆÐ¾Ð¹ Ð¿Ñ‘Ñ ÑÐºÐ²Ð¾Ñ€ÐµÑ† ÐµÐ²Ð³ÐµÐ½Ð¸Ð¹"s, DocumentStatus::ACTUAL, {1, 1, 1});
 
-		FindTopDocuments(search_server, "ïóøèñòûé -ï¸ñ"s);
-		FindTopDocuments(search_server, "ïóøèñòûé --êîò"s);
-		FindTopDocuments(search_server, "ïóøèñòûé -"s);
+	   FindTopDocuments(search_server, "Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ -Ð¿Ñ‘Ñ"s);
+	   FindTopDocuments(search_server, "Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ --ÐºÐ¾Ñ‚"s);
+	   FindTopDocuments(search_server, "Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ -"s);
 
-		MatchDocuments(search_server, "ïóøèñòûé ï¸ñ"s);
-		MatchDocuments(search_server, "ìîäíûé -êîò"s);
-		MatchDocuments(search_server, "ìîäíûé --ï¸ñ"s);
-		MatchDocuments(search_server, "ïóøèñòûé - õâîñò"s);
-	}*/
+	   MatchDocuments(search_server, "Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ Ð¿Ñ‘Ñ"s);
+	   MatchDocuments(search_server, "Ð¼Ð¾Ð´Ð½Ñ‹Ð¹ -ÐºÐ¾Ñ‚"s);
+	   MatchDocuments(search_server, "Ð¼Ð¾Ð´Ð½Ñ‹Ð¹ --Ð¿Ñ‘Ñ"s);
+	   MatchDocuments(search_server, "Ð¿ÑƒÑˆÐ¸ÑÑ‚Ñ‹Ð¹ - Ñ…Ð²Ð¾ÑÑ‚"s);
+   }*/
 
-	/*{
-		SearchServer search_server("and with"s);
+   /* {
+	   SearchServer search_server("and with"s);
 
-		search_server.AddDocument(1, "funny pet and nasty rat"s, DocumentStatus::ACTUAL, {7, 2, 7});
-		search_server.AddDocument(2, "funny pet with curly hair"s, DocumentStatus::ACTUAL, {1, 2, 3});
-		search_server.AddDocument(3, "big cat nasty hair"s, DocumentStatus::ACTUAL, {1, 2, 8});
-		search_server.AddDocument(4, "big dog cat Vladislav"s, DocumentStatus::ACTUAL, {1, 3, 2});
-		search_server.AddDocument(5, "big dog hamster Borya"s, DocumentStatus::ACTUAL, {1, 1, 1});
+	   search_server.AddDocument(1, "funny pet and nasty rat"s, DocumentStatus::ACTUAL, {7, 2, 7});
+	   search_server.AddDocument(2, "funny pet with curly hair"s, DocumentStatus::ACTUAL, {1, 2, 3});
+	   search_server.AddDocument(3, "big cat nasty hair"s, DocumentStatus::ACTUAL, {1, 2, 8});
+	   search_server.AddDocument(4, "big dog cat Vladislav"s, DocumentStatus::ACTUAL, {1, 3, 2});
+	   search_server.AddDocument(5, "big dog hamster Borya"s, DocumentStatus::ACTUAL, {1, 1, 1});
 
-		const auto search_results = search_server.FindTopDocuments("curly dog"s);
-		int page_size = 2;
-		const auto pages = Paginate(search_results, page_size);
+	   const auto search_results = search_server.FindTopDocuments("curly dog"s);
+	   int page_size = 2;
+	   const auto pages = Paginate(search_results, page_size);
 
-		// pagination
-		for (auto page = pages.begin(); page != pages.end(); ++page) {
-			std::cout << *page << std::endl;
-			std::cout << "Page break"s << std::endl;
-		}
-	}*/
+	   // pagination
+	   for (auto page = pages.begin(); page != pages.end(); ++page) {
+		   std::cout << *page << std::endl;
+		   std::cout << "Page break"s << std::endl;
+	   }
+   }*/
+
+   /* {
+	   SearchServer search_server("and with"s);
+
+	   AddDocument(search_server, 1, "funny pet and nasty rat"s, DocumentStatus::ACTUAL, {7, 2, 7});
+	   AddDocument(search_server, 2, "funny pet with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
+
+	   // Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð° 2, Ð±ÑƒÐ´ÐµÑ‚ ÑƒÐ´Ð°Ð»Ñ‘Ð½
+	   AddDocument(search_server, 3, "funny pet with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
+
+	   // Ð¾Ñ‚Ð»Ð¸Ñ‡Ð¸Ðµ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð² ÑÑ‚Ð¾Ð¿-ÑÐ»Ð¾Ð²Ð°Ñ…, ÑÑ‡Ð¸Ñ‚Ð°ÐµÐ¼ Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ð¾Ð¼
+	   AddDocument(search_server, 4, "funny pet and curly hair"s, DocumentStatus::ACTUAL, {1, 2});
+
+	   // Ð¼Ð½Ð¾Ð¶ÐµÑÑ‚Ð²Ð¾ ÑÐ»Ð¾Ð² Ñ‚Ð°ÐºÐ¾Ðµ Ð¶Ðµ, ÑÑ‡Ð¸Ñ‚Ð°ÐµÐ¼ Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ð¾Ð¼ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð° 1
+	   AddDocument(search_server, 5, "funny funny pet and nasty nasty rat"s, DocumentStatus::ACTUAL, {1, 2});
+
+	   // Ð´Ð¾Ð±Ð°Ð²Ð¸Ð»Ð¸ÑÑŒ Ð½Ð¾Ð²Ñ‹Ðµ ÑÐ»Ð¾Ð²Ð°, Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ð¾Ð¼ Ð½Ðµ ÑÐ²Ð»ÑÐµÑ‚ÑÑ
+	   AddDocument(search_server, 6, "funny pet and not very nasty rat"s, DocumentStatus::ACTUAL, {1, 2});
+
+	   // Ð¼Ð½Ð¾Ð¶ÐµÑÑ‚Ð²Ð¾ ÑÐ»Ð¾Ð² Ñ‚Ð°ÐºÐ¾Ðµ Ð¶Ðµ, ÐºÐ°Ðº Ð² id 6, Ð½ÐµÑÐ¼Ð¾Ñ‚Ñ€Ñ Ð½Ð° Ð´Ñ€ÑƒÐ³Ð¾Ð¹ Ð¿Ð¾Ñ€ÑÐ´Ð¾Ðº, ÑÑ‡Ð¸Ñ‚Ð°ÐµÐ¼ Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ð¾Ð¼
+	   AddDocument(search_server, 7, "very nasty rat and not very funny pet"s, DocumentStatus::ACTUAL, {1, 2});
+
+	   // ÐµÑÑ‚ÑŒ Ð½Ðµ Ð²ÑÐµ ÑÐ»Ð¾Ð²Ð°, Ð½Ðµ ÑÐ²Ð»ÑÐµÑ‚ÑÑ Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ð¾Ð¼
+	   AddDocument(search_server, 8, "pet with rat and rat and rat"s, DocumentStatus::ACTUAL, {1, 2});
+
+	   // ÑÐ»Ð¾Ð²Ð° Ð¸Ð· Ñ€Ð°Ð·Ð½Ñ‹Ñ… Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð¾Ð², Ð½Ðµ ÑÐ²Ð»ÑÐµÑ‚ÑÑ Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ð¾Ð¼
+	   AddDocument(search_server, 9, "nasty rat with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
+
+	   std::cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << std::endl;
+	   RemoveDuplicates(search_server);
+	   std::cout << "After duplicates removed: "s << search_server.GetDocumentCount() << std::endl;
+   }*/
+
+   /* {
+	   SearchServer search_server("and with"s);
+
+	   int id = 0;
+	   for (
+		   const std::string& text : {
+			   "funny pet and nasty rat"s,
+			   "funny pet with curly hair"s,
+			   "funny pet and not very nasty rat"s,
+			   "pet with rat and rat and rat"s,
+			   "nasty rat with curly hair"s,
+		   }
+		   ) {
+		   search_server.AddDocument(++id, text, DocumentStatus::ACTUAL, { 1, 2 });
+	   }
+
+	   const std::vector<std::string> queries = {
+		   "nasty rat -not"s,
+		   "not very funny nasty pet"s,
+		   "curly hair"s
+	   };
+	   id = 0;
+	   for (
+		   const auto& documents : ProcessQueries(search_server, queries)
+		   ) {
+		   std::cout << documents.size() << " documents for query ["s << queries[id++] << "]"s << std::endl;
+	   }
+   }*/
+
+   {
+	   SearchServer search_server("and with"s);
+
+	   int id = 0;
+	   for (
+		   const std::string& text : {
+			   "funny pet and nasty rat"s,
+			   "funny pet with curly hair"s,
+			   "funny pet and not very nasty rat"s,
+			   "pet with rat and rat and rat"s,
+			   "nasty rat with curly hair"s,
+		   }
+		   ) {
+		   search_server.AddDocument(++id, text, DocumentStatus::ACTUAL, { 1, 2 });
+	   }
+
+	   const std::vector<std::string> queries = {
+		   "nasty rat -not"s,
+		   "not very funny nasty pet"s,
+		   "curly hair"s
+	   };
+	   for (const Document& document : ProcessQueriesJoined(search_server, queries)) {
+		   std::cout << "Document "s << document.id << " matched with relevance "s << document.relevance << std::endl;
+	   }
+   }
+
+   /*{
+	   SearchServer search_server("and with"s);
+
+	   int id = 0;
+	   for (
+		   const std::string& text : {
+			   "funny pet and nasty rat"s,
+			   "funny pet with curly hair"s,
+			   "funny pet and not very nasty rat"s,
+			   "pet with rat and rat and rat"s,
+			   "nasty rat with curly hair"s,
+		   }
+		   ) {
+		   search_server.AddDocument(++id, text, DocumentStatus::ACTUAL, { 1, 2 });
+	   }
+
+	   const std::string query = "curly and funny"s;
+
+	   auto report = [&search_server, &query] {
+		   std::cout << search_server.GetDocumentCount() << " documents total, "s
+			   << search_server.FindTopDocuments(query).size() << " documents for query ["s << query << "]"s << std::endl;
+	   };
+
+	   report();
+	   // Ð¾Ð´Ð½Ð¾Ð¿Ð¾Ñ‚Ð¾Ñ‡Ð½Ð°Ñ Ð²ÐµÑ€ÑÐ¸Ñ
+	   search_server.RemoveDocument(5);
+	   report();
+	   // Ð¾Ð´Ð½Ð¾Ð¿Ð¾Ñ‚Ð¾Ñ‡Ð½Ð°Ñ Ð²ÐµÑ€ÑÐ¸Ñ
+	   search_server.RemoveDocument(std::execution::seq, 1);
+	   report();
+	   // Ð¼Ð½Ð¾Ð³Ð¾Ð¿Ð¾Ñ‚Ð¾Ñ‡Ð½Ð°Ñ Ð²ÐµÑ€ÑÐ¸Ñ
+	   search_server.RemoveDocument(std::execution::par, 2);
+	   report();
+   }*/
+
+   /*{
+	   SearchServer search_server("and with"s);
+
+	   int id = 0;
+	   for (
+		   const std::string& text : {
+			   "funny pet and nasty rat"s,
+			   "funny pet with curly hair"s,
+			   "funny pet and not very nasty rat"s,
+			   "pet with rat and rat and rat"s,
+			   "nasty rat with curly hair"s,
+		   }
+		   ) {
+		   search_server.AddDocument(++id, text, DocumentStatus::ACTUAL, { 1, 2 });
+	   }
+
+	   const std::string query = "curly and funny -not"s;
+
+	   {
+		   const auto [words, status] = search_server.MatchDocument(query, 1);
+		   std::cout << words.size() << " words for document 1"s << std::endl;
+		   // 1 words for document 1
+	   }
+
+	   {
+		   const auto [words, status] = search_server.MatchDocument(std::execution::seq, query, 2);
+		   std::cout << words.size() << " words for document 2"s << std::endl;
+		   // 2 words for document 2
+	   }
+
+	   {
+		   const auto [words, status] = search_server.MatchDocument(std::execution::par, query, 3);
+		   std::cout << words.size() << " words for document 3"s << std::endl;
+		   // 0 words for document 3
+	   }
+   }*/
 
 	{
 		SearchServer search_server("and with"s);
 
-		AddDocument(search_server, 1, "funny pet and nasty rat"s, DocumentStatus::ACTUAL, {7, 2, 7});
-		AddDocument(search_server, 2, "funny pet with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
+		int id = 0;
+		for (
+			const std::string& text : {
+				"white cat and yellow hat"s,
+				"curly cat curly tail"s,
+				"nasty dog with big eyes"s,
+				"nasty pigeon john"s,
+			}
+			) {
+			search_server.AddDocument(++id, text, DocumentStatus::ACTUAL, { 1, 2 });
+		}
 
-		// äóáëèêàò äîêóìåíòà 2, áóäåò óäàë¸í
-		AddDocument(search_server, 3, "funny pet with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
+		std::cout << "ACTUAL by default:"s << std::endl;
+		// Ð¿Ð¾ÑÐ»ÐµÐ´Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒÐ½Ð°Ñ Ð²ÐµÑ€ÑÐ¸Ñ
+		for (const Document& document : search_server.FindTopDocuments("curly nasty cat"s)) {
+			PrintDocument(document);
+		}
+		std::cout << "BANNED:"s << std::endl;
+		// Ð¿Ð¾ÑÐ»ÐµÐ´Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒÐ½Ð°Ñ Ð²ÐµÑ€ÑÐ¸Ñ
+		for (const Document& document : search_server.FindTopDocuments(std::execution::seq, 
+			"curly nasty cat"s, DocumentStatus::BANNED)) {
+			PrintDocument(document);
+		}
 
-		// îòëè÷èå òîëüêî â ñòîï-ñëîâàõ, ñ÷èòàåì äóáëèêàòîì
-		AddDocument(search_server, 4, "funny pet and curly hair"s, DocumentStatus::ACTUAL, {1, 2});
-
-		// ìíîæåñòâî ñëîâ òàêîå æå, ñ÷èòàåì äóáëèêàòîì äîêóìåíòà 1
-		AddDocument(search_server, 5, "funny funny pet and nasty nasty rat"s, DocumentStatus::ACTUAL, {1, 2});
-
-		// äîáàâèëèñü íîâûå ñëîâà, äóáëèêàòîì íå ÿâëÿåòñÿ
-		AddDocument(search_server, 6, "funny pet and not very nasty rat"s, DocumentStatus::ACTUAL, {1, 2});
-
-		// ìíîæåñòâî ñëîâ òàêîå æå, êàê â id 6, íåñìîòðÿ íà äðóãîé ïîðÿäîê, ñ÷èòàåì äóáëèêàòîì
-		AddDocument(search_server, 7, "very nasty rat and not very funny pet"s, DocumentStatus::ACTUAL, {1, 2});
-
-		// åñòü íå âñå ñëîâà, íå ÿâëÿåòñÿ äóáëèêàòîì
-		AddDocument(search_server, 8, "pet with rat and rat and rat"s, DocumentStatus::ACTUAL, {1, 2});
-
-		// ñëîâà èç ðàçíûõ äîêóìåíòîâ, íå ÿâëÿåòñÿ äóáëèêàòîì
-		AddDocument(search_server, 9, "nasty rat with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
-
-		std::cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << std::endl;
-		RemoveDuplicates(search_server);
-		std::cout << "After duplicates removed: "s << search_server.GetDocumentCount() << std::endl;
+		std::cout << "Even ids:"s << std::endl;
+		// Ð¿Ð°Ñ€Ð°Ð»Ð»ÐµÐ»ÑŒÐ½Ð°Ñ Ð²ÐµÑ€ÑÐ¸Ñ
+		for (const Document& document : search_server.FindTopDocuments(std::execution::par, 
+			"curly nasty cat"s, [](int document_id, DocumentStatus, int) 
+			{ return document_id % 2 == 0; })) {
+			PrintDocument(document);
+		}
 	}
 
 	return 0;
