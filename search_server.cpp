@@ -34,7 +34,8 @@ int SearchServer::GetDocumentCount() const {
 }
 
 int SearchServer::GetDocumentId(int id) const {
-	return document_ids_.find(id) != document_ids_.end() ? *(document_ids_.find(id)) : -999;
+	auto id_iter = document_ids_.find(id);
+	return id_iter != document_ids_.end() ? *(id_iter) : -999;
 }
 
 std::tuple<std::vector<std::string_view>, DocumentStatus> SearchServer::MatchDocument(
