@@ -22,9 +22,7 @@ void SearchServer::AddDocument(int document_id, const std::string_view& document
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string_view& raw_query, const DocumentStatus& status) const {
-	return FindTopDocuments(raw_query, [status](int, DocumentStatus document_status, int) {
-		return document_status == status;
-		});
+	return FindTopDocuments(raw_query, [status](int, DocumentStatus document_status, int) { return document_status == status; });
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string_view& raw_query) const {
@@ -53,7 +51,6 @@ std::tuple<std::vector<std::string_view>, DocumentStatus> SearchServer::MatchDoc
 		}
 		if (word_to_document_freqs_.at(word).count(document_id)) {
 			matched_words.push_back(std::string_view((*word_to_document_freqs_.find(word)).first));
-			
 		}
 	}
 	for (const std::string& word : temp_query.minus_words) {
@@ -141,7 +138,7 @@ const std::map<std::string_view, double> SearchServer::GetWordFrequencies(int do
 	if (document_words_freqs_.find(document_id) != document_words_freqs_.end()) {
 		auto& temp_map = document_words_freqs_.find(document_id)->second;
 		for (const auto& [word, freq] : temp_map) {
-			result.insert({ std::string_view(word), freq});
+			result.insert({ std::string_view(word), freq });
 		};
 	};
 	return result;

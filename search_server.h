@@ -95,9 +95,7 @@ public:
 			return FindTopDocuments(raw_query, status);
 		}
 		else {
-			return FindTopDocuments(policy, raw_query, [status](int, DocumentStatus document_status, int) {
-				return document_status == status;
-				});
+			return FindTopDocuments(policy, raw_query, [status](int, DocumentStatus document_status, int) { return document_status == status; });
 		};
 	}
 
@@ -192,7 +190,6 @@ public:
 					std::lock_guard guard(map_mutex);
 					id_freq_map.erase(iter_to_erase);
 				});
-
 			document_words_freqs_.erase(document_words_freqs_.find(document_id));
 		};
 	}
