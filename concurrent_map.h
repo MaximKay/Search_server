@@ -52,6 +52,11 @@ public:
 		return ordinary_map;
 	}
 
+	void erase(const Key& key) {
+		size_t bucket_number = static_cast<size_t>(key) % buckets_amount;
+		std::lock_guard lock(buckets_mutexes_[bucket_number]);
+		conc_map_[bucket_number].erase(key);
+	}
 private:
 	std::map<size_t, std::map<Key, Value>> conc_map_;
 	std::vector<std::mutex> buckets_mutexes_;

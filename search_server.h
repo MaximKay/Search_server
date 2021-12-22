@@ -12,6 +12,7 @@
 #include <string_view>
 #include <tuple>
 #include <future>
+#include <mutex>
 
 #include "string_processing.h"
 #include "document.h"
@@ -50,7 +51,8 @@ public:
 
 		sort(std::execution::seq, matched_documents.begin(), matched_documents.end(),
 			[](const Document& lhs, const Document& rhs) {
-				return (std::abs(lhs.relevance - rhs.relevance) < 1e-6) ?
+				const auto difference = std::abs(lhs.relevance - rhs.relevance);
+				return (difference < 1e-6) ?
 					lhs.rating > rhs.rating : lhs.relevance > rhs.relevance;
 			});
 		if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
@@ -76,7 +78,8 @@ public:
 
 			sort(std::execution::par, matched_documents.begin(), matched_documents.end(),
 				[](const Document& lhs, const Document& rhs) {
-					return (std::abs(lhs.relevance - rhs.relevance) < 1e-6) ?
+					const auto difference = std::abs(lhs.relevance - rhs.relevance);
+					return (difference < 1e-6) ?
 						lhs.rating > rhs.rating : lhs.relevance > rhs.relevance;
 				});
 			if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
@@ -141,11 +144,17 @@ public:
 			std::vector<std::string_view> matched_words(query.plus_words.size());
 
 			std::transform(std::execution::par, query.plus_words.begin(), query.plus_words.end(),
-				matched_words.begin(), [&, this, document_id](const std::string& word)
-				{auto iter = word_to_document_freqs_.find(word);
-			if (iter == word_to_document_freqs_.end()) { return ""sv; }
-			else if (iter->second.count(document_id)) { return std::string_view(iter->first); }
-			else { return ""sv; };
+				matched_words.begin(), [&, this, document_id](const std::string& word) {
+					auto iter = word_to_document_freqs_.find(word);
+					if (iter == word_to_document_freqs_.end()) {
+						return ""sv;
+					}
+					else if (iter->second.count(document_id)) {
+						return std::string_view(iter->first);
+					}
+					else {
+						return ""sv;
+					};
 				});
 
 			for (const std::string& word : query.minus_words) {
@@ -175,12 +184,14 @@ public:
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::parallel_policy>) {
 			document_ids_.erase(document_ids_.find(document_id));
 			documents_.erase(documents_.find(document_id));
-
+			std::mutex map_mutex;
 			const auto& words_to_erase = document_words_freqs_.find(document_id)->second;
 			std::for_each(std::execution::par, words_to_erase.begin(), words_to_erase.end(),
-				[this, document_id](const auto& word_and_freq) {
+				[this, &map_mutex, document_id](const auto& word_and_freq) {
 					auto& id_freq_map = word_to_document_freqs_.find(word_and_freq.first)->second;
-					id_freq_map.erase(id_freq_map.find(document_id));
+					auto iter_to_erase = id_freq_map.find(document_id);
+					std::lock_guard guard(map_mutex);
+					id_freq_map.erase(iter_to_erase);
 				});
 
 			document_words_freqs_.erase(document_words_freqs_.find(document_id));
@@ -277,24 +288,29 @@ private:
 				operations.push_back(std::async(kernel, word));
 			};
 		}
-		std::map<int, double> document_to_relevance = conc_map.BuildOrdinaryMap();
 
 		std::for_each(policy, query.minus_words.begin(), query.minus_words.end(),
-			[this, &document_to_relevance, &policy](const std::string& word) {
+			[this, &conc_map, &policy](const std::string& word) {
 				if (word_to_document_freqs_.count(word)) {
 					auto& words_freq_map = word_to_document_freqs_.at(word);
 					std::for_each(policy, words_freq_map.begin(), words_freq_map.end(),
-						[&document_to_relevance](const std::pair<const int, double>& pair_obj) {
-							document_to_relevance.erase(pair_obj.first);
+						[&conc_map](const std::pair<const int, double>& pair_obj) {
+							conc_map.erase(pair_obj.first);
 						});
 				};
 			});
 
+		std::map<int, double> document_to_relevance = conc_map.BuildOrdinaryMap();
+		std::mutex matched_documents_mutex;
 		std::vector<Document> matched_documents;
 		std::for_each(policy, document_to_relevance.begin(), document_to_relevance.end(),
-			[this, &matched_documents](const std::pair<const int, double>& pair_obj) {
-				matched_documents.push_back({ pair_obj.first, pair_obj.second,
-					documents_.at(pair_obj.first).rating });
+			[this, &matched_documents, &matched_documents_mutex](const std::pair<const int, double>& pair_obj) {
+				Document* ref{};
+				{
+					std::lock_guard guard(matched_documents_mutex);
+					ref = &matched_documents.emplace_back();
+				}
+				*ref = { pair_obj.first, pair_obj.second, documents_.at(pair_obj.first).rating };
 			});
 		return matched_documents;
 	}
