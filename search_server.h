@@ -23,6 +23,7 @@ using namespace std::string_literals;
 using namespace std::string_view_literals;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
+const double MAX_DIFF = 1e-6;
 
 class SearchServer {
 public:
@@ -51,8 +52,7 @@ public:
 
 		sort(std::execution::seq, matched_documents.begin(), matched_documents.end(),
 			[](const Document& lhs, const Document& rhs) {
-				const auto difference = std::abs(lhs.relevance - rhs.relevance);
-				return (difference < 1e-6) ?
+				return (std::abs(lhs.relevance - rhs.relevance) < MAX_DIFF) ?
 					lhs.rating > rhs.rating : lhs.relevance > rhs.relevance;
 			});
 		if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
@@ -78,8 +78,7 @@ public:
 
 			sort(std::execution::par, matched_documents.begin(), matched_documents.end(),
 				[](const Document& lhs, const Document& rhs) {
-					const auto difference = std::abs(lhs.relevance - rhs.relevance);
-					return (difference < 1e-6) ?
+					return (std::abs(lhs.relevance - rhs.relevance) < MAX_DIFF) ?
 						lhs.rating > rhs.rating : lhs.relevance > rhs.relevance;
 				});
 			if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
