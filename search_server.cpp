@@ -34,7 +34,7 @@ int SearchServer::GetDocumentCount() const {
 }
 
 int SearchServer::GetDocumentId(int id) const {
-	auto id_iter = document_ids_.find(id);
+	const auto id_iter = document_ids_.find(id);
 	return id_iter != document_ids_.end() ? *(id_iter) : -999;
 }
 
