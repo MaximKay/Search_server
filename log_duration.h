@@ -12,6 +12,8 @@
 
 using namespace std::string_literals;
 
+//simple class to get durationof anything
+//name of operation can be set wih passing it to the constructor
 class LogDuration {
 public:
 	LogDuration();

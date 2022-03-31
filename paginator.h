@@ -27,6 +27,8 @@ private:
 	Iterator end_;
 };
 
+//class to paginate search results, amount of lines on pages sets by using passing it to construtor
+//or to the function Paginate
 template <typename Iterator>
 class Paginator : public IteratorRange<Iterator>{
 public:
@@ -64,6 +66,7 @@ Ostream& operator<<(Ostream& out, IteratorRange<Iterator> page){
 	return out;
 }
 
+//easy way to paginate search request results by passing results container and results per page amount
 template <typename Container>
 auto Paginate(const Container& c, int page_size){
 	return Paginator(begin(c), end(c), page_size);

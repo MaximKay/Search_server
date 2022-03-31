@@ -1,5 +1,6 @@
 #include "process_queries.h"
 
+//this function returning vector of results for each query from incoming vector of queries
 std::vector<std::vector<Document>> ProcessQueries(
 	const SearchServer& search_server, const std::vector<std::string>& queries) {
 	std::vector<std::vector<Document>> result(queries.size());
@@ -10,6 +11,7 @@ std::vector<std::vector<Document>> ProcessQueries(
 	return result;
 }
 
+//transforming vector of results vectors to one vector
 std::vector<Document> ProcessQueriesJoined(
 	const SearchServer& search_server, const std::vector<std::string>& queries) {
 	std::vector<Document> result;

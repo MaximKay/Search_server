@@ -165,7 +165,11 @@ void RemoveDocumentTest() {
 		server.AddDocument(doc_id_2, content_2, DocumentStatus::ACTUAL, ratings_2);
 		server.RemoveDocument(doc_id);
 		std::map<std::string, double> empty_map;
-		ASSERT_EQUAL_HINT(server.GetDocumentId(doc_id), -999, "Wrong document was removed from ids set"s);
+		try {
+			server.GetDocumentId(doc_id);
+		}
+		catch (const std::out_of_range&) {
+		};
 		ASSERT_EQUAL_HINT(server.GetWordFrequencies(doc_id).size(), empty_map.size(), "Wrong document was removed from word freqs map"s);
 		const auto found_docs = server.FindTopDocuments("city"s);
 		ASSERT_EQUAL_HINT(found_docs.size(), 0u, "Document was not removed"s);

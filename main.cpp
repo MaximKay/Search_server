@@ -18,12 +18,12 @@ void PrintDocument(const Document& document) {
 }
 
 int main() {
-	/* {
+	{
 		TestSearchServer();
 		std::cout << "All tests OK"s << std::endl;
-	}*/
+	}
 
-	/* {
+	{
 		SearchServer search_server("and in at"s);
 		RequestQueue request_queue(search_server);
 
@@ -44,9 +44,9 @@ int main() {
 		// 1437 empty requests
 		request_queue.AddFindRequest("sparrow"s);
 		std::cout << "Total empty requests: "s << request_queue.GetNoResultRequests() << std::endl;
-	}*/
+	}
 
-	/* {
+	{
 	   SearchServer search_server("и в на"s);
 
 	   AddDocument(search_server, 1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, {7, 2, 7});
@@ -63,9 +63,9 @@ int main() {
 	   MatchDocuments(search_server, "модный -кот"s);
 	   MatchDocuments(search_server, "модный --пёс"s);
 	   MatchDocuments(search_server, "пушистый - хвост"s);
-   }*/
+   }
 
-   /* {
+   {
 	   SearchServer search_server("and with"s);
 
 	   search_server.AddDocument(1, "funny pet and nasty rat"s, DocumentStatus::ACTUAL, {7, 2, 7});
@@ -83,9 +83,9 @@ int main() {
 		   std::cout << *page << std::endl;
 		   std::cout << "Page break"s << std::endl;
 	   }
-   }*/
+   }
 
-   /* {
+   {
 	   SearchServer search_server("and with"s);
 
 	   AddDocument(search_server, 1, "funny pet and nasty rat"s, DocumentStatus::ACTUAL, {7, 2, 7});
@@ -115,9 +115,9 @@ int main() {
 	   std::cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << std::endl;
 	   RemoveDuplicates(search_server);
 	   std::cout << "After duplicates removed: "s << search_server.GetDocumentCount() << std::endl;
-   }*/
+   }
 
-   /* {
+   {
 	   SearchServer search_server("and with"s);
 
 	   int id = 0;
@@ -144,7 +144,7 @@ int main() {
 		   ) {
 		   std::cout << documents.size() << " documents for query ["s << queries[id++] << "]"s << std::endl;
 	   }
-   }*/
+   }
 
    {
 	   SearchServer search_server("and with"s);
@@ -172,7 +172,7 @@ int main() {
 	   }
    }
 
-   /*{
+   {
 	   SearchServer search_server("and with"s);
 
 	   int id = 0;
@@ -205,9 +205,9 @@ int main() {
 	   // многопоточная версия
 	   search_server.RemoveDocument(std::execution::par, 2);
 	   report();
-   }*/
+   }
 
-   /*{
+   {
 	   SearchServer search_server("and with"s);
 
 	   int id = 0;
@@ -242,7 +242,7 @@ int main() {
 		   std::cout << words.size() << " words for document 3"s << std::endl;
 		   // 0 words for document 3
 	   }
-   }*/
+   }
 
 	{
 		SearchServer search_server("and with"s);
@@ -266,15 +266,15 @@ int main() {
 		}
 		std::cout << "BANNED:"s << std::endl;
 		// последовательная версия
-		for (const Document& document : search_server.FindTopDocuments(std::execution::seq, 
+		for (const Document& document : search_server.FindTopDocuments(std::execution::seq,
 			"curly nasty cat"s, DocumentStatus::BANNED)) {
 			PrintDocument(document);
 		}
 
 		std::cout << "Even ids:"s << std::endl;
 		// параллельная версия
-		for (const Document& document : search_server.FindTopDocuments(std::execution::par, 
-			"curly nasty cat"s, [](int document_id, DocumentStatus, int) 
+		for (const Document& document : search_server.FindTopDocuments(std::execution::par,
+			"curly nasty cat"s, [](int document_id, DocumentStatus, int)
 			{ return document_id % 2 == 0; })) {
 			PrintDocument(document);
 		}

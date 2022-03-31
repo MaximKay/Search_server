@@ -13,17 +13,24 @@
 
 using namespace std::string_literals;
 
+//this class implements secure multithread adding, changing and erasing elements of the map 
+//and creating ordinary map
 template <typename Key, typename Value>
 class ConcurrentMap {
 public:
+	//key must be an integrer
 	static_assert(std::is_integral_v<Key>, "ConcurrentMap supports only integer keys");
 
+	//this structure implements secure multithread access to element
 	struct Access {
 		std::lock_guard<std::mutex> guard;
+
 		Value& ref_to_value;
+
 		Access(const Key& key, std::mutex& bucket_mutex, std::map<Key, Value>& map_part) :
 			guard(bucket_mutex), ref_to_value(map_part[key]) {
 		}
+
 		Access& operator+=(const Value& other) {
 			ref_to_value += other;
 			return *this;
@@ -37,6 +44,7 @@ public:
 		};
 	}
 
+	//overloading [] operator to secure multithread access to map element
 	Access operator[](const Key& key) {
 		size_t bucket_number = static_cast<size_t>(key) % buckets_amount;
 		return Access(key, buckets_mutexes_[bucket_number], conc_map_[bucket_number]);
@@ -49,9 +57,11 @@ public:
 			std::lock_guard lock(buckets_mutexes_[index]);
 			ordinary_map.insert(map_part.begin(), map_part.end());
 		};
+
 		return ordinary_map;
 	}
 
+	//secure erasing of element using locking
 	void erase(const Key& key) {
 		size_t bucket_number = static_cast<size_t>(key) % buckets_amount;
 		std::lock_guard lock(buckets_mutexes_[bucket_number]);

@@ -35,11 +35,11 @@ public:
 
 	template <typename StringContainer>
 	explicit SearchServer(const StringContainer& stop_words)
-		: stop_words_(MakeUniqueNonEmptyStrings(stop_words))  // Extract non-empty stop words
-	{
+		: stop_words_(MakeUniqueNonEmptyStrings(stop_words)) { // Extract non-empty stop words
+		//if any word from stops words is not valid, throw exception
 		if (!all_of(stop_words_.begin(), stop_words_.end(), IsValidWord)) {
 			throw std::invalid_argument("Some of stop words are invalid"s);
-		}
+		};
 	}
 
 	void AddDocument(int, const std::string_view&, DocumentStatus, const std::vector<int>&);
@@ -48,13 +48,17 @@ public:
 	std::vector<Document> FindTopDocuments(const std::string_view& raw_query, DocumentPredicate document_predicate) const {
 		const auto query = ParseQuery(raw_query);
 
+		//getting all matched documents using custom or dafault predicate
 		auto matched_documents = FindAllDocuments(query, document_predicate);
 
+		//first sorting by relevance and if relevances are almost the same, then sort by rating
 		sort(std::execution::seq, matched_documents.begin(), matched_documents.end(),
 			[](const Document& lhs, const Document& rhs) {
 				return (std::abs(lhs.relevance - rhs.relevance) < MAX_DIFF) ?
 					lhs.rating > rhs.rating : lhs.relevance > rhs.relevance;
 			});
+
+		//if matched documents amount is bigger than MAX_RESULT_DOCUMENT_COUNT constant - delete unnecessary docs
 		if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
 			matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
 		}
@@ -68,19 +72,26 @@ public:
 	template <typename ExecutionPolicy, typename DocumentPredicate>
 	std::vector<Document> FindTopDocuments(const ExecutionPolicy& policy,
 		const std::string_view& raw_query, DocumentPredicate document_predicate) const {
+		//non-parallel version
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
 			return FindTopDocuments(raw_query, document_predicate);
 		}
 		else {
+			//using parallel methods for finding docs and their sorting
+
 			const auto query = ParseQuery(raw_query);
 
+			//getting all matched documents using custom or dafault predicate and parallel execution policy
 			auto matched_documents = FindAllDocuments(policy, query, document_predicate);
 
+			//first sorting by relevance and if relevances are almost the same, then sort by rating
 			sort(std::execution::par, matched_documents.begin(), matched_documents.end(),
 				[](const Document& lhs, const Document& rhs) {
 					return (std::abs(lhs.relevance - rhs.relevance) < MAX_DIFF) ?
 						lhs.rating > rhs.rating : lhs.relevance > rhs.relevance;
 				});
+
+			//if matched documents amount is bigger than MAX_RESULT_DOCUMENT_COUNT constant - delete unnecessary docs
 			if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
 				matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
 			}
@@ -92,9 +103,11 @@ public:
 	std::vector<Document> FindTopDocuments(const ExecutionPolicy& policy,
 		const std::string_view& raw_query, const DocumentStatus& status) const {
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
+			//non-parallel version
 			return FindTopDocuments(raw_query, status);
 		}
 		else {
+			//creating predicate with document status filtering
 			return FindTopDocuments(policy, raw_query, [status](int, DocumentStatus document_status, int) { return document_status == status; });
 		};
 	}
@@ -102,9 +115,11 @@ public:
 	template <typename ExecutionPolicy>
 	std::vector<Document> FindTopDocuments(const ExecutionPolicy& policy, const std::string_view& raw_query) const {
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
+			//non-parallel version
 			return FindTopDocuments(raw_query);
 		}
 		else {
+			//default documents filter now is DocumentStatus::ACTUAL
 			return FindTopDocuments(policy, raw_query, DocumentStatus::ACTUAL);
 		};
 	}
@@ -128,37 +143,34 @@ public:
 	template <typename ExecutionPolicy>
 	std::tuple<std::vector<std::string_view>, DocumentStatus> MatchDocument(
 		ExecutionPolicy, const std::string_view& raw_query, int document_id) const {
+		//non-parallel version
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
 			return MatchDocument(raw_query, document_id);
 		};
 
+		//throw exception if document with recieved id does not exist
+		if (document_ids_.count(document_id) == 0) {
+			throw std::out_of_range("Invalid id"s);
+		};
+
+		//version using parallel algorithms
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::parallel_policy>) {
-			if (document_ids_.count(document_id) == 0) {
-				throw std::out_of_range("Invalid id"s);
-			};
 			const auto query = ParseQuery(raw_query);
 
+			//creating vector for matched words with max size as maximum possible matching words(plus_words)
 			std::vector<std::string_view> matched_words(query.plus_words.size());
 
+			//add all matched words to vector
 			std::transform(std::execution::par, query.plus_words.begin(), query.plus_words.end(),
 				matched_words.begin(), [&, this, document_id](const std::string& word) {
 					auto iter = word_to_document_freqs_.find(word);
-					if (iter == word_to_document_freqs_.end()) {
-						return ""sv;
-					}
-					else if (iter->second.count(document_id)) {
-						return std::string_view(iter->first);
-					}
-					else {
-						return ""sv;
-					};
+					return (iter != word_to_document_freqs_.end() && iter->second.count(document_id))
+						? std::string_view(iter->first) : ""sv;
 				});
 
+			//if any of minus words exists in the document we are looking for matches, then clear all matched words
 			for (const std::string& word : query.minus_words) {
-				if (word_to_document_freqs_.count(word) == 0) {
-					continue;
-				}
-				if (word_to_document_freqs_.at(word).count(document_id)) {
+				if (word_to_document_freqs_.count(word) && word_to_document_freqs_.at(word).count(document_id)) {
 					matched_words.clear();
 					break;
 				}
@@ -172,15 +184,17 @@ public:
 	template <typename ExecutionPolicy>
 	void RemoveDocument(ExecutionPolicy, int document_id) {
 		if (!document_ids_.count(document_id)) {
-			return;
+			return; //if there is no document with recieved id, then do nothing
 		};
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
-			RemoveDocument(document_id);
+			RemoveDocument(document_id); //removing with non-parallel methods
 			return;
 		};
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::parallel_policy>) {
 			document_ids_.erase(document_ids_.find(document_id));
 			documents_.erase(documents_.find(document_id));
+
+			//using mutex and lock_guard to do removing correctly step-by-step
 			std::mutex map_mutex;
 			const auto& words_to_erase = document_words_freqs_.find(document_id)->second;
 			std::for_each(std::execution::par, words_to_erase.begin(), words_to_erase.end(),
@@ -190,6 +204,7 @@ public:
 					std::lock_guard guard(map_mutex);
 					id_freq_map.erase(iter_to_erase);
 				});
+
 			document_words_freqs_.erase(document_words_freqs_.find(document_id));
 		};
 	}
@@ -198,6 +213,7 @@ private:
 		int rating;
 		DocumentStatus status;
 	};
+
 	const std::set<std::string> stop_words_;
 	std::map<std::string, std::map<int, double>> word_to_document_freqs_;
 	std::map<int, std::map<std::string, double>> document_words_freqs_;
@@ -231,12 +247,16 @@ private:
 
 	template <typename DocumentPredicate>
 	std::vector<Document> FindAllDocuments(const Query& query, DocumentPredicate document_predicate) const {
-		std::map<int, double> document_to_relevance;
+		std::map<int, double> document_to_relevance; //document id and relevance
 		for (const std::string& word : query.plus_words) {
 			if (word_to_document_freqs_.count(word)) {
+				//computing freq for each word
 				const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
+
 				for (const auto& [document_id, term_freq] : word_to_document_freqs_.at(word)) {
 					const auto& document_data = documents_.at(document_id);
+
+					//filter unnecessary docs using predicate
 					if (document_predicate(document_id, document_data.status, document_data.rating)) {
 						document_to_relevance[document_id] += term_freq * inverse_document_freq;
 					};
@@ -244,6 +264,7 @@ private:
 			};
 		};
 
+		//erase all documents which contain minus words from result
 		for (const std::string& word : query.minus_words) {
 			if (word_to_document_freqs_.count(word)) {
 				for (const auto& [document_id, _] : word_to_document_freqs_.at(word)) {
@@ -252,6 +273,7 @@ private:
 			};
 		};
 
+		//creating vector of Document data for all valid results
 		std::vector<Document> matched_documents;
 		for (const auto& [document_id, relevance] : document_to_relevance) {
 			matched_documents.push_back({ document_id, relevance, documents_.at(document_id).rating });
@@ -263,12 +285,14 @@ private:
 	std::vector<Document> FindAllDocuments(const ExecutionPolicy& policy,
 		const Query& query, DocumentPredicate document_predicate) const {
 		if constexpr (std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
-			return FindAllDocuments(query, document_predicate);
+			return FindAllDocuments(query, document_predicate); //non-parallel method
 		};
 
+		//creating ConcurrentMap, it guaranties correct adding and removing elements while multithreading 
 		ConcurrentMap<int, double> conc_map(4);
 		{
 			std::vector<std::future<void>> operations;
+			//creating kernel to process word
 			auto kernel = [this, &conc_map, document_predicate](const std::string& word) {
 				if (word_to_document_freqs_.count(word)) {
 					const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
@@ -280,11 +304,14 @@ private:
 					};
 				};
 			};
+
+			//starting kernels
 			for (const std::string& word : query.plus_words) {
 				operations.push_back(std::async(kernel, word));
 			};
-		}
+		} //when we will exit this namespace, all results of kernels would be gotten automatically
 
+		//erase all documents which contain minus words from result
 		std::for_each(policy, query.minus_words.begin(), query.minus_words.end(),
 			[this, &conc_map, &policy](const std::string& word) {
 				if (word_to_document_freqs_.count(word)) {
@@ -295,7 +322,7 @@ private:
 						});
 				};
 			});
-
+		//creating map using method of ConcurrentMap
 		std::map<int, double> document_to_relevance = conc_map.BuildOrdinaryMap();
 		std::mutex matched_documents_mutex;
 		std::vector<Document> matched_documents;
@@ -303,6 +330,7 @@ private:
 			[this, &matched_documents, &matched_documents_mutex](const std::pair<const int, double>& pair_obj) {
 				Document* ref{};
 				{
+					//locking only for creating place for element to get maximum perfomance
 					std::lock_guard guard(matched_documents_mutex);
 					ref = &matched_documents.emplace_back();
 				}

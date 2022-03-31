@@ -6,6 +6,8 @@
 #include "document.h"
 #include "search_server.h"
 
+//this class can count how many empty results have been for search requests
+//working by passing reference to SearchServer object to constructor and then adding reqests with AddFindRequest method 
 class RequestQueue {
 public:
 	explicit RequestQueue(SearchServer&);
